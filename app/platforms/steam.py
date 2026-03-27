@@ -1,4 +1,4 @@
-"""Steam platform adapter."""
+"""Steam platform adapter for player profile, games, playtime, and level."""
 
 import math
 
