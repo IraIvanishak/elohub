@@ -74,3 +74,50 @@ Four blueprints in `app/routes/`: `auth`, `profile`, `leaderboard`, `compare`. T
 - Scoring uses **logistic/logarithmic percentile approximations** rather than real population data — keeps it self-contained without needing external percentile APIs
 - **Cached API responses** are stored in the DB so profiles render even when external APIs are down
 - Server-rendered templates only (no frontend JS framework); static asset dirs exist but are empty
+
+## Multi-Agent Patterns
+
+### Pattern: Parallel Feature Development
+
+**When to use**: Implementing 2+ independent features simultaneously that don't modify the same files.
+
+**Setup**:
+1. Create feature branches and worktrees:
+   ```bash
+   git worktree add -b feature-name ../elohub-feature-name main
+   ```
+2. Launch Claude in each worktree (interactive or headless):
+   ```bash
+   # Interactive
+   cd ../elohub-feature-name && claude
+
+   # Headless
+   cd ../elohub-feature-name && claude -p "task description"
+   ```
+
+**Agent prompts** (examples from this project):
+- Task A: "Create a settings page for SkillBoard. Add a settings blueprint in app/routes/settings.py with a /settings route. Create a matching template app/templates/settings.html using the same dark theme."
+- Task B: "Add a favicon to the SkillBoard Flask app. Create a simple SVG favicon and save it as app/static/favicon.svg. Update the base template to include a favicon link tag."
+
+**Merge**:
+1. Review: `git diff main...feature-name`
+2. Merge one at a time: `git merge feature-name`
+3. Resolve conflicts if any (likely in shared files like `base.html`)
+4. Stash local uncommitted changes first if needed: `git stash`
+
+**Cleanup**:
+```bash
+git worktree remove ../elohub-feature-name
+git branch -d feature-name
+```
+
+### Pattern: Writer + Reviewer
+
+**When to use**: Quality-critical code where a fresh context catches bugs the author misses.
+
+**Setup**:
+1. Writer agent implements the feature
+2. Reviewer agent (in a separate session or with `context: fork`) critiques the implementation
+3. Writer applies feedback and iterates
+
+**Best for**: New platform adapters, service layer changes, or security-sensitive code.
