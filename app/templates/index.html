@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}SkillBoard — Leaderboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Global Leaderboard</h2>
+    <table class="leaderboard">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Power Score</th>
+                <th>League</th>
+                <th>Platforms</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td class="rank">{{ loop.index }}</td>
+                <td><a href="/u/{{ user.username }}">{{ user.username }}</a></td>
+                <td><strong>{{ user.power_score }}</strong></td>
+                <td>
+                    <span class="league-badge" style="background: {{ user.league.color }}20; color: {{ user.league.color }}; border: 1px solid {{ user.league.color }};">
+                        {{ user.league.name }}
+                    </span>
+                </td>
+                <td>
+                    {% for p in user.platforms %}
+                        <span class="platform-tag">{{ p.platform.replace('_', '.') | title }}</span>
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if not current_user.is_authenticated %}
+<div class="card" style="text-align: center;">
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">Join SkillBoard and see how you compare!</p>
+    <a href="/register" class="btn btn-primary">Create Profile</a>
+</div>
+{% endif %}
+{% endblock %}

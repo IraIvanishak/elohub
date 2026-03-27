@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} — SkillBoard{% endblock %}
+
+{% block meta %}
+<meta property="og:title" content="{{ user.username }} on SkillBoard — Power Score {{ user.power_score }}">
+<meta property="og:description" content="{{ user.league.name }} league | {{ user.platforms|length }} platform(s) connected">
+<meta property="og:type" content="profile">
+{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="card" style="text-align: center;">
+    <div class="score-big" style="color: {{ user.league.color }};">{{ user.power_score }}</div>
+    <div style="color: var(--text-muted); margin: 0.5rem 0;">Power Score</div>
+    <span class="league-badge" style="background: {{ user.league.color }}20; color: {{ user.league.color }}; border: 1px solid {{ user.league.color }}; font-size: 1rem;">
+        {{ user.league.name }}
+    </span>
+    <div style="margin-top: 0.8rem;">
+        <a href="/u/{{ user.username }}" style="color: var(--text-muted); font-size: 0.85rem;">skillboard/u/{{ user.username }}</a>
+    </div>
+</div>
+
+<!-- Radar Chart -->
+{% if user.platforms %}
+<div class="card">
+    <h2>Skills Radar</h2>
+    <div class="chart-container">
+        <canvas id="radarChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- Platform Breakdown -->
+{% for p in user.platforms %}
+<div class="card">
+    <h2 style="display: flex; justify-content: space-between; align-items: center;">
+        {{ platform_labels.get(p.platform, p.platform) }}
+        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
+            @{{ p.platform_username }}
+            {% if p.scores %} — Score: {{ p.scores.power_score }}{% endif %}
+        </span>
+    </h2>
+    {% if p.scores and p.scores.metrics %}
+    <div class="metrics-grid">
+        {% for key, m in p.scores.metrics.items() %}
+        <div class="metric-card">
+            <div class="metric-value">{{ m.value }}</div>
+            <div class="metric-label">{{ key | replace('_', ' ') | title }}</div>
+            <div class="metric-pct">Top {{ "%.1f"|format(100 - m.percentile) }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if is_own %}
+    <div style="margin-top: 1rem; text-align: right;">
+        <form method="POST" action="/profile/remove-platform/{{ p.id }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-danger btn-sm">Remove</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% if not user.platforms %}
+<div class="card" style="text-align: center; color: var(--text-muted);">
+    <p>No platforms connected yet.</p>
+</div>
+{% endif %}
+
+<!-- Add Platform (own profile only) -->
+{% if is_own %}
+<div class="card">
+    <h2>Connect Platform</h2>
+    <form method="POST" action="/profile/add-platform">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Platform</label>
+                <select name="platform">
+                    {% for slug, label in platform_labels.items() %}
+                    <option value="{{ slug }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="platform_username" placeholder="your username" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Connect</button>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="text-align: center;">
+    <form method="POST" action="/profile/refresh">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary btn-sm">Refresh All Data</button>
+    </form>
+</div>
+{% endif %}
+
+<!-- Compare CTA -->
+{% if not is_own %}
+<div class="card" style="text-align: center;">
+    {% if current_user.is_authenticated %}
+    <a href="/compare/{{ current_user.username }}/{{ user.username }}" class="btn btn-primary">Compare with {{ user.username }}</a>
+    {% else %}
+    <a href="/register" class="btn btn-primary">Join to compare yourself</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if user.platforms %}
+<script>
+(function() {
+    const labels = [];
+    const data = [];
+    {% for p in user.platforms %}
+    {% if p.scores and p.scores.metrics %}
+    {% for key, m in p.scores.metrics.items() %}
+    labels.push("{{ platform_labels.get(p.platform, p.platform) }}: {{ key | replace('_', ' ') | title }}");
+    data.push({{ "%.1f"|format(m.percentile) }});
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+
+    new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Percentile',
+                data: data,
+                fill: true,
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                borderColor: '#38bdf8',
+                pointBackgroundColor: '#38bdf8',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    beginAtZero: true, max: 100,
+                    ticks: { display: false },
+                    grid: { color: 'rgba(148,163,184,0.2)' },
+                    pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                    angleLines: { color: 'rgba(148,163,184,0.2)' },
+                }
+            },
+            plugins: { legend: { display: false } },
+        }
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

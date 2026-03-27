@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Compare — SkillBoard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Head-to-Head</h2>
+    <form method="GET" action="/compare">
+        <div class="form-row">
+            <div class="form-group">
+                <label>User 1</label>
+                <select name="user1">
+                    <option value="">Select user...</option>
+                    {% for u in users %}
+                    <option value="{{ u.username }}">{{ u.username }} ({{ u.power_score }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="align-self: center; color: var(--text-muted); font-weight: 700; font-size: 1.2rem;">VS</div>
+            <div class="form-group">
+                <label>User 2</label>
+                <select name="user2">
+                    <option value="">Select user...</option>
+                    {% for u in users %}
+                    <option value="{{ u.username }}">{{ u.username }} ({{ u.power_score }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Compare</button>
+        </div>
+    </form>
+    {% if error %}
+    <p style="color: var(--error); margin-top: 1rem;">{{ error }}</p>
+    {% endif %}
+</div>
+{% endblock %}

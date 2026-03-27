@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ user1.username }} vs {{ user2.username }} — SkillBoard{% endblock %}
+
+{% block meta %}
+<meta property="og:title" content="{{ user1.username }} vs {{ user2.username }} — SkillBoard">
+<meta property="og:description" content="Head-to-head: {{ result.score[0] }} - {{ result.score[1] }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Score Header -->
+<div class="card" style="text-align: center;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 2rem;">
+        <div>
+            <div style="font-size: 1.3rem; font-weight: 700;">
+                <a href="/u/{{ user1.username }}">{{ user1.username }}</a>
+            </div>
+            <div class="score-big" style="color: {{ user1.league.color }};">{{ user1.power_score }}</div>
+            <span class="league-badge" style="background: {{ user1.league.color }}20; color: {{ user1.league.color }}; border: 1px solid {{ user1.league.color }};">
+                {{ user1.league.name }}
+            </span>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--text-muted);">VS</div>
+        <div>
+            <div style="font-size: 1.3rem; font-weight: 700;">
+                <a href="/u/{{ user2.username }}">{{ user2.username }}</a>
+            </div>
+            <div class="score-big" style="color: {{ user2.league.color }};">{{ user2.power_score }}</div>
+            <span class="league-badge" style="background: {{ user2.league.color }}20; color: {{ user2.league.color }}; border: 1px solid {{ user2.league.color }};">
+                {{ user2.league.name }}
+            </span>
+        </div>
+    </div>
+
+    {% if result.shared_platforms %}
+    <div style="margin-top: 1.5rem; font-size: 1.5rem; font-weight: 800;">
+        <span style="color: {% if result.score[0] > result.score[1] %}var(--success){% else %}var(--text-muted){% endif %};">{{ result.score[0] }}</span>
+        <span style="color: var(--text-muted);"> : </span>
+        <span style="color: {% if result.score[1] > result.score[0] %}var(--success){% else %}var(--text-muted){% endif %};">{{ result.score[1] }}</span>
+    </div>
+    <div style="color: var(--text-muted); font-size: 0.85rem;">metrics won</div>
+    {% endif %}
+</div>
+
+{% if not result.shared_platforms %}
+<div class="card" style="text-align: center; color: var(--text-muted);">
+    <p>No shared platforms between these users.</p>
+    <p style="font-size: 0.85rem;">Comparison works only on platforms both users have connected.</p>
+</div>
+{% endif %}
+
+<!-- Per-platform comparison -->
+{% for comp in result.comparisons %}
+<div class="card">
+    <h2>{{ platform_labels.get(comp.platform, comp.platform) }}</h2>
+    {% for m in comp.metrics %}
+    <div class="compare-row">
+        <div class="compare-val left {% if m.winner == 1 %}winner{% elif m.winner == 2 %}loser{% endif %}">
+            {{ m.value1 }}
+            <span style="font-size: 0.75rem; color: var(--text-muted);">({{ "%.1f"|format(m.pct1) }}%)</span>
+        </div>
+        <div class="compare-label">{{ m.name | replace('_', ' ') | title }}</div>
+        <div class="compare-val right {% if m.winner == 2 %}winner{% elif m.winner == 1 %}loser{% endif %}">
+            {{ m.value2 }}
+            <span style="font-size: 0.75rem; color: var(--text-muted);">({{ "%.1f"|format(m.pct2) }}%)</span>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="compare-row" style="border-top: 1px solid var(--surface2); margin-top: 0.5rem; padding-top: 0.5rem;">
+        <div class="compare-val left" style="color: var(--accent);">{{ comp.power1 }}</div>
+        <div class="compare-label" style="font-weight: 700;">Power Score</div>
+        <div class="compare-val right" style="color: var(--accent);">{{ comp.power2 }}</div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Shareable link -->
+<div class="card" style="text-align: center;">
+    <p style="color: var(--text-muted); font-size: 0.85rem;">Share this comparison:</p>
+    <code style="background: var(--bg); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem;">
+        /compare/{{ user1.username }}/{{ user2.username }}
+    </code>
+</div>
+
+<!-- Back to select -->
+<div style="text-align: center; margin-top: 1rem;">
+    <a href="/compare" class="btn btn-primary btn-sm">New Comparison</a>
+</div>
+{% endblock %}

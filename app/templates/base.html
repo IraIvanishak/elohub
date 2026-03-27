@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block meta %}{% endblock %}
+    <title>{% block title %}SkillBoard{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+            --text: #f1f5f9; --text-muted: #94a3b8; --accent: #38bdf8;
+            --success: #4ade80; --error: #f87171; --warn: #fbbf24;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .navbar { background: var(--surface); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface2); }
+        .navbar .brand { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+        .navbar nav { display: flex; gap: 1.2rem; align-items: center; }
+
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+
+        .card { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--surface2); }
+        .card h2 { margin-bottom: 1rem; font-size: 1.2rem; }
+
+        .btn { display: inline-block; padding: 0.6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--accent); color: #0f172a; }
+        .btn-danger { background: var(--error); color: #0f172a; }
+        .btn-sm { padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+
+        input, select { padding: 0.6rem; border-radius: 8px; border: 1px solid var(--surface2); background: var(--bg); color: var(--text); font-size: 0.9rem; width: 100%; }
+        input:focus, select:focus { outline: 2px solid var(--accent); }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.3rem; color: var(--text-muted); font-size: 0.85rem; }
+        .form-row { display: flex; gap: 0.8rem; align-items: end; }
+        .form-row > * { flex: 1; }
+        .form-row .btn { flex: none; }
+
+        .flash { padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
+        .flash-error { background: rgba(248,113,113,0.15); color: var(--error); border: 1px solid var(--error); }
+        .flash-success { background: rgba(74,222,128,0.15); color: var(--success); border: 1px solid var(--success); }
+
+        .score-big { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+        .league-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; }
+
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .metric-card { background: var(--bg); border-radius: 8px; padding: 1rem; text-align: center; }
+        .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .metric-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; }
+        .metric-pct { font-size: 0.75rem; color: var(--success); }
+
+        .leaderboard { width: 100%; border-collapse: collapse; }
+        .leaderboard th, .leaderboard td { padding: 0.8rem; text-align: left; }
+        .leaderboard th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid var(--surface2); }
+        .leaderboard tr:hover { background: var(--surface2); }
+        .leaderboard .rank { font-weight: 700; color: var(--accent); width: 40px; }
+
+        .compare-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-bottom: 0.5rem; padding: 0.6rem; border-radius: 8px; }
+        .compare-row:nth-child(odd) { background: var(--bg); }
+        .compare-label { text-align: center; font-size: 0.8rem; color: var(--text-muted); min-width: 80px; }
+        .compare-val { font-weight: 700; font-size: 1.1rem; }
+        .compare-val.left { text-align: right; }
+        .compare-val.right { text-align: left; }
+        .winner { color: var(--success); }
+        .loser { color: var(--text-muted); }
+
+        .chart-container { max-width: 350px; margin: 0 auto; }
+
+        .platform-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: var(--surface2); margin: 0.2rem; }
+
+        @media (max-width: 600px) {
+            .form-row { flex-direction: column; }
+            .navbar { padding: 0.8rem 1rem; }
+            .score-big { font-size: 2.5rem; }
+            .compare-row { grid-template-columns: 1fr; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="brand">SkillBoard</a>
+        <nav>
+            <a href="/">Leaderboard</a>
+            <a href="/compare">Compare</a>
+            {% if current_user.is_authenticated %}
+                <a href="/profile">My Profile</a>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
