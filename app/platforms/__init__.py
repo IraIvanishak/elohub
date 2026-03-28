@@ -24,4 +24,4 @@ def platform_labels() -> dict[str, str]:
 
 
 # Import adapters to trigger registration
-from . import chess_com, github  # noqa: E402, F401
+from . import chess_com, github, leetcode, steam  # noqa: E402, F401

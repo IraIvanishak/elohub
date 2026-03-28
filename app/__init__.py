@@ -27,11 +27,13 @@ def create_app():
     from app.routes.leaderboard import leaderboard_bp
     from app.routes.profile import profile_bp
     from app.routes.compare import compare_bp
+    from app.routes.settings import settings_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(leaderboard_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(compare_bp)
+    app.register_blueprint(settings_bp)
 
     with app.app_context():
         db.create_all()
