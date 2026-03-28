@@ -1,0 +1,35 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-review:
+    if: >
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this Flask PR for the SkillBoard project. Focus on:
+            - Security issues (SQL injection, XSS, CSRF, command injection)
+            - Adherence to project conventions in CLAUDE.md (snake_case, service layer pattern, platform adapter pattern)
+            - Missing error handling at system boundaries (user input, external APIs)
+            - Correct use of Flask patterns (blueprints, app factory)
+            - Any broken imports or missing dependencies
