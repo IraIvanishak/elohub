@@ -121,3 +121,26 @@ git branch -d feature-name
 3. Writer applies feedback and iterates
 
 **Best for**: New platform adapters, service layer changes, or security-sensitive code.
+
+## Automated Workflows
+
+### CI/CD Integration
+
+**Claude PR Review** (`.github/workflows/claude-review.yml`)
+- Triggered: On PR open/sync/reopen, or `@claude` mention in PR comments
+- Actions: Reviews code using `anthropics/claude-code-action@v1`, posts review comment
+- Checks: Security issues (SQLi, XSS, CSRF), project conventions, Flask patterns, missing error handling, broken imports
+- Requires: `ANTHROPIC_API_KEY` in GitHub Secrets
+
+### Utility Scripts
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `scripts/claude-pr-prep.sh` | Generate PR description from branch changes | `./scripts/claude-pr-prep.sh [base-branch]` (default: main) |
+
+### Production Rules
+
+- All automation uses `--max-turns` to limit cost (3-5 for reviews, 10-20 for code changes)
+- Review scripts use `--allowedTools Read,Glob,Grep` (read-only)
+- Human approval required before merging any automated changes
+- API keys stored in GitHub Secrets, never committed to the repository
